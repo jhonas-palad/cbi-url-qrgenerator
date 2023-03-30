@@ -1,0 +1,25 @@
+.form-group{
+    display:flex;
+    flex-direction: column;
+    width: 100%;
+    font: normal normal normal 13px/25px Roboto;
+}
+.label, .form-group label{
+    letter-spacing: 0px;
+    color: var(--cbi-primary);
+    opacity: 1;
+    border: none;
+    background-color: transparent;
+}
+
+.form-group input{
+    height: 50px;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+    background: #FFFFFF 0% 0% no-repeat padding-box;
+    border: 1px solid #ED184B5C;
+    border-radius: 16px;
+}
+.form-group input:focus{
+    outline: none;
+}
