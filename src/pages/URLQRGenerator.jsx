@@ -1,10 +1,11 @@
-import React, {useReducer, useCallback} from 'react';
+import React, {useReducer, useCallback, useRef} from 'react';
 import { downloadFile, FILETYPES_OPTS } from '../utils';
 import { v4 as uuidv4 } from 'uuid';
+
 import Container from '../components/Container';
 import ButtonSelect from '../components/ButtonSelect';
 import FormGroup from '../components/FormGroup';
-import QRCode from '../components/QRCode';
+import { QRCode } from 'react-qrcode-logo';
 
 const initState = {
     urlInput: '',
@@ -13,18 +14,17 @@ const initState = {
     showDownload: false
 }
 
-
 const reducer = (state, action) => {
     const {type, payload} = action;
     switch(type) {
-        case 'UPDATE_INPUT':
+        case 'urlInput':
             return {...state, ...payload};
-        case 'CHANGE_FILE_TYPE':
+        case 'changeFileType':
             return {
                 ...state,
                 fileType: action.value
             }
-        case 'GENERATE_QR':
+        case 'generateQR':
             return {
                 ...state, 
                 toConvert: state.urlInput,
@@ -32,24 +32,20 @@ const reducer = (state, action) => {
             };
         case 'RESET_STATE':
             return {
-                ...state,
-                ...initState
+                ...initState,
             }
         default:
-            console.log('Error occured, -jhonas');
-            return {...state};
+            throw new Error();
     }
 }
 
-
-
 const URLQRGenerator = () => {
     const [state, dispatch] = useReducer(reducer, initState);
+    const qrRef = useRef(null);
     const downloadQRCode = useCallback((fileType) => {
-        const generatedQRCodeRef = document.getElementById("generated_qrcode");
-        state.toConvert && downloadFile(generatedQRCodeRef, uuidv4(), fileType ?? state.fileType);
-    }, [state.fileType, state.toConvert]);
-    
+        const generatedQRCodeRef = qrRef.current.canvas.current;
+        downloadFile(generatedQRCodeRef, uuidv4(), fileType ?? state.fileType);
+    }, [state.fileType]);
     return(
  
         <Container style={{flexGrow:1}} className="body">
@@ -58,48 +54,60 @@ const URLQRGenerator = () => {
                 GENERATOR
             </h1>
             <div className='container'>
-                <FormGroup
-                    label="Enter your URL"
-                    id="urlInput"
-                    name="urlInput"
-                    title="Enter your URL"
-                    className='hello'
-                    onChange={
-                        (e) => dispatch({type: 'UPDATE_INPUT', payload: {urlInput: e.target.value}})
-                    }
-                    type='url'
-                    value={state.urlInput}
-                />
-                <QRCode value={state.toConvert} hidden={!state.toConvert}/>
-                <div className="flex-col flex flex-center btn-wrapper">
                 {
-                    !state.showDownload ? (
-                        <button 
-                        className='btn-cbi' 
-                            onClick={()=> dispatch({type:'GENERATE_QR'})} 
-                            type="button"
-                            disabled={!state.urlInput}>
-                                Generate
-                        </button>
+                    !state.toConvert ? (
+                        <FormGroup
+                            label="Enter your URL"
+                            id="urlInput"
+                            name="urlInput"
+                            title="Enter your URL"
+                            className='hello'
+                            onChange={
+                                (e) => dispatch({type: 'urlInput', payload: {urlInput: e.target.value}})
+                            }
+                            type='url'
+                            value={state.urlInput}
+                        />
                     ) : (
-                        <>
-                            <ButtonSelect 
-
-                                title="Download"
-                                opts={FILETYPES_OPTS}
-                                optClick={
-                                        (value)=>{
-                                            dispatch({type: 'CHANGE_FILE_TYPE', value});
-                                            downloadQRCode(value)
-                                    }
-                                }
-                                btnClick={()=>downloadQRCode(state.fileType)}
-                            />
-                            <button onClick={()=>dispatch({type: 'RESET_STATE'})} className='label' style={{cursor:'pointer'}}>Generate another QR code</button>
-                        </>
+                        <QRCode 
+                            id="generated_qrcode" 
+                            ref={qrRef}
+                            value={state.toConvert}
+                            ecLevel='H' 
+                            quietZone={15} 
+                            size={256} 
+                        />
                     )
                 }
-                </div>
+            </div>
+            <div className="flex-col flex flex-center btn-wrapper">
+            {
+                !state.showDownload ? (
+                    <button
+                        style={{marginTop: '2.5rem'}}
+                        className='btn-cbi' 
+                        onClick={()=> dispatch({type:'generateQR'})} 
+                        type="button"
+                        disabled={!state.urlInput}>
+                            Generate
+                    </button>
+                ) : (
+                    <>
+                        <ButtonSelect 
+                            title="Download"
+                            opts={FILETYPES_OPTS}
+                            optClick={
+                                    (value)=>{
+                                        dispatch({type: 'changeFileType', value});
+                                        downloadQRCode(value)
+                                }
+                            }
+                            btnClick={()=>downloadQRCode(state.fileType)}
+                        />
+                        <p className='label' style={{cursor:'pointer'}} onClick={()=>dispatch({type:'RESET_STATE'})}>Generate another QR code</p>
+                    </>
+                )
+            }
             </div>
         </Container>
     )
