@@ -1,2 +1,2 @@
-## UBLC CBI App QRCode Generatory
+## UBLC CBI QRCode generator
 
